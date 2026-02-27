@@ -387,6 +387,7 @@ const state = {
 
 let lotRenderToken = 0;
 const MAX_MINIMIZED_WINDOWS = 6;
+const COMPACT_GALLERY_MAX_WIDTH = 860;
 let minimizeHintTimer = null;
 let minimizeHintElement = null;
 
@@ -1074,6 +1075,20 @@ function syncThumbSelection(win) {
   });
 }
 
+function syncWindowGalleryLayout(win) {
+  if (!win || !win.element) {
+    return;
+  }
+
+  if (isMobileLayout()) {
+    win.element.classList.remove("compact-gallery");
+    return;
+  }
+
+  const width = win.element.getBoundingClientRect().width;
+  win.element.classList.toggle("compact-gallery", width <= COMPACT_GALLERY_MAX_WIDTH);
+}
+
 function setWindowImage(win, requestedIndex, direction = 1, animate = true) {
   const lot = getLotById(win.lotId);
   if (!lot) {
@@ -1143,6 +1158,7 @@ function applyMaximize(win) {
   win.element.style.top = `${margin}px`;
   win.element.style.width = `${Math.round(width)}px`;
   win.element.style.height = `${Math.round(height)}px`;
+  syncWindowGalleryLayout(win);
 }
 
 function toggleMaximize(windowId) {
@@ -1173,6 +1189,7 @@ function toggleMaximize(windowId) {
     }
   }
 
+  syncWindowGalleryLayout(win);
   focusWindow(windowId);
 }
 
@@ -1257,6 +1274,7 @@ function restoreWindow(windowId) {
   const trayRect = refs.trayBar.getBoundingClientRect();
   win.isMinimized = false;
   win.element.classList.remove("is-minimized");
+  syncWindowGalleryLayout(win);
   syncTray();
   syncBackdropState();
 
@@ -1344,6 +1362,7 @@ function onPointerMove(event) {
     const height = clamp(interaction.startHeight + dy, minHeight, maxHeight);
     win.element.style.width = `${Math.round(width)}px`;
     win.element.style.height = `${Math.round(height)}px`;
+    syncWindowGalleryLayout(win);
   }
 }
 
@@ -1488,6 +1507,7 @@ function openLotWindow(lotId) {
 
   refs.windowHost.appendChild(win.element);
   windowManager.windows.set(id, win);
+  syncWindowGalleryLayout(win);
   if (isMobileLayout()) {
     normalizeMobileWindows();
   }
@@ -1561,6 +1581,7 @@ function onWindowResize() {
     win.element.style.top = `${Math.round(top)}px`;
     win.element.style.width = `${Math.round(width)}px`;
     win.element.style.height = `${Math.round(height)}px`;
+    syncWindowGalleryLayout(win);
   });
 }
 
