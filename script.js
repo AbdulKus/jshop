@@ -346,6 +346,65 @@ const CATEGORY_LABELS = {
   chain: "Цепи"
 };
 
+const ORDER_CONTACTS = [
+  {
+    id: "telegram",
+    label: "Telegram",
+    hint: "@AbdulKus",
+    href: () => "https://t.me/AbdulKus",
+    external: true,
+    icon: `
+      <svg viewBox="0 0 24 24" role="img" aria-hidden="true">
+        <path fill="currentColor" d="M20.67 3.61c.77-.31 1.53.38 1.35 1.18l-2.73 12.47c-.16.74-.95 1.12-1.62.78l-4.17-2.11-2.35 2.17a.9.9 0 0 1-1.51-.52l-.48-3.48 9.59-8.71a.45.45 0 0 0-.54-.72L6.32 12.3l-4.1-1.64a.9.9 0 0 1 .05-1.69z"/>
+      </svg>
+    `
+  },
+  {
+    id: "jabber",
+    label: "Jabber",
+    hint: "abdulkus@xmpp.jp",
+    href: () => "xmpp:abdulkus@xmpp.jp?message",
+    external: false,
+    icon: `
+      <svg viewBox="0 0 24 24" role="img" aria-hidden="true">
+        <path fill="none" stroke="currentColor" stroke-width="1.8" d="M4.6 6.7a5.7 5.7 0 0 1 5.7-2.7h3.4a5.7 5.7 0 0 1 5.7 5.7v2.6a5.7 5.7 0 0 1-5.7 5.7H10l-3.4 2.3v-3A5.7 5.7 0 0 1 4 12.3z"/>
+        <circle cx="9.4" cy="10.9" r="1.1" fill="currentColor"/>
+        <circle cx="12" cy="10.9" r="1.1" fill="currentColor"/>
+        <circle cx="14.6" cy="10.9" r="1.1" fill="currentColor"/>
+      </svg>
+    `
+  },
+  {
+    id: "signal",
+    label: "Signal",
+    hint: "+1 202 555 0142",
+    href: () => "https://signal.me/#p/+12025550142",
+    external: true,
+    icon: `
+      <svg viewBox="0 0 24 24" role="img" aria-hidden="true">
+        <path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-dasharray="2.2 2.2" d="M12 3.6c4.9 0 8.8 3.3 8.8 7.5S16.9 18.6 12 18.6c-.7 0-1.4-.1-2.1-.2l-4 1.9 1.2-3.5c-2.2-1.3-3.6-3.3-3.6-5.7 0-4.2 4-7.5 8.8-7.5z"/>
+        <path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" d="M8.1 11.1h7.8M9.5 14h5"/>
+      </svg>
+    `
+  },
+  {
+    id: "mail",
+    label: "Mail",
+    hint: "orders@aerogem.shop",
+    href: (lot) =>
+      `mailto:orders@aerogem.shop?subject=${encodeURIComponent(`Заказ: ${lot.name}`)}&body=${encodeURIComponent(
+        `Здравствуйте! Хочу оформить заказ на лот «${lot.name}».`
+      )}`,
+    external: false,
+    icon: `
+      <svg viewBox="0 0 24 24" role="img" aria-hidden="true">
+        <rect x="3.3" y="5.1" width="17.4" height="13.8" rx="2.2" fill="none" stroke="currentColor" stroke-width="1.8"/>
+        <path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="m4.6 7.1 7.4 5.6 7.4-5.6"/>
+      </svg>
+    `
+  }
+];
+
 const refs = {
   lotGrid: document.getElementById("lotGrid"),
   paginationPanel: document.getElementById("paginationPanel"),
@@ -857,8 +916,55 @@ function createWindowRefs(element) {
     currentImage: element.querySelector(".window-image.current"),
     incomingImage: element.querySelector(".window-image.incoming"),
     resizeHandle: element.querySelector(".js-resize"),
-    buyBtn: element.querySelector(".buy-btn")
+    orderToggleBtn: element.querySelector(".js-order-toggle"),
+    orderContacts: element.querySelector(".js-order-contacts")
   };
+}
+
+function setOrderContactsExpanded(win, expanded) {
+  if (!win?.refs.orderToggleBtn || !win?.refs.orderContacts) {
+    return;
+  }
+
+  win.isOrderContactsOpen = expanded;
+  win.refs.orderToggleBtn.setAttribute("aria-expanded", expanded ? "true" : "false");
+  win.refs.orderToggleBtn.classList.toggle("is-open", expanded);
+  win.refs.orderContacts.classList.toggle("is-open", expanded);
+  win.refs.orderToggleBtn.closest(".details-panel")?.classList.toggle("order-open", expanded);
+}
+
+function renderOrderContacts(win, lot) {
+  if (!win?.refs.orderContacts) {
+    return;
+  }
+
+  win.refs.orderContacts.innerHTML = "";
+  const fragment = document.createDocumentFragment();
+
+  ORDER_CONTACTS.forEach((contact, index) => {
+    const link = document.createElement("a");
+    link.className = "order-contact";
+    link.href = contact.href(lot);
+    link.setAttribute("aria-label", `${contact.label}: ${contact.hint}`);
+    link.style.setProperty("--contact-delay", `${index * 52}ms`);
+
+    if (contact.external) {
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+    }
+
+    link.innerHTML = `
+      <span class="order-contact-icon">${contact.icon}</span>
+      <span class="order-contact-copy">
+        <span class="order-contact-title">${contact.label}</span>
+        <span class="order-contact-hint">${contact.hint}</span>
+      </span>
+    `;
+
+    fragment.appendChild(link);
+  });
+
+  win.refs.orderContacts.appendChild(fragment);
 }
 
 function syncBackdropState() {
@@ -1049,10 +1155,8 @@ function setWindowLot(win, lotId, resetImage = true) {
   win.refs.specs.innerHTML = lot.specs.map((spec) => `<li>${spec}</li>`).join("");
   win.element.classList.toggle("is-sold", lot.sold);
   applyLotGlitchBackground(win.element, lot);
-  if (win.refs.buyBtn) {
-    win.refs.buyBtn.disabled = lot.sold;
-    win.refs.buyBtn.textContent = lot.sold ? "Лот продан" : "Добавить в заказ";
-  }
+  renderOrderContacts(win, lot);
+  setOrderContactsExpanded(win, false);
 
   renderWindowThumbnails(win, lot);
   setWindowImage(win, win.imageIndex, 1, false);
@@ -1526,6 +1630,11 @@ function bindWindowEvents(win) {
   if (win.refs.maximizeBtn) {
     win.refs.maximizeBtn.addEventListener("click", () => toggleMaximize(win.id));
   }
+  if (win.refs.orderToggleBtn) {
+    win.refs.orderToggleBtn.addEventListener("click", () => {
+      setOrderContactsExpanded(win, !win.isOrderContactsOpen);
+    });
+  }
 
   win.refs.prevImageBtn.addEventListener("click", () => setWindowImage(win, win.imageIndex - 1, -1, true));
   win.refs.nextImageBtn.addEventListener("click", () => setWindowImage(win, win.imageIndex + 1, 1, true));
@@ -1645,6 +1754,7 @@ function openLotWindow(lotId) {
     isMinimized: false,
     isMinimizing: false,
     isMaximized: false,
+    isOrderContactsOpen: false,
     maximizeAnimation: null,
     closeAnimation: null,
     restoreRect: null,

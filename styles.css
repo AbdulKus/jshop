@@ -1377,28 +1377,148 @@ body.has-dock .catalog {
   color: #edfbff;
 }
 
-.buy-btn {
+.order-toggle {
   width: 100%;
   margin-top: 12px;
+  position: relative;
+  padding: 12px 44px 12px 14px;
+  text-align: left;
   padding-block: 12px;
   border-color: rgba(189, 245, 217, 0.72);
   background: linear-gradient(180deg, rgba(247, 255, 250, 0.36), rgba(94, 196, 150, 0.24));
 }
 
-.buy-btn:disabled {
-  cursor: not-allowed;
-  opacity: 0.86;
+.order-toggle::after {
+  content: "";
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  width: 9px;
+  height: 9px;
+  border-right: 2px solid rgba(238, 252, 255, 0.92);
+  border-bottom: 2px solid rgba(238, 252, 255, 0.92);
+  transform: translateY(-64%) rotate(45deg);
+  transition: transform 260ms cubic-bezier(0.2, 0.75, 0.25, 1);
 }
 
-.buy-btn:disabled:hover {
-  transform: none;
-  box-shadow: none;
+.order-toggle.is-open::after {
+  transform: translateY(-36%) rotate(-135deg);
 }
 
-.lot-window.is-sold .buy-btn:disabled {
+.details-panel.order-open .order-toggle {
+  box-shadow: 0 0 0 1px rgba(200, 249, 223, 0.46), 0 10px 24px rgba(24, 86, 56, 0.24);
+}
+
+.order-contacts {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transform: translateY(-9px) scale(0.98);
+  pointer-events: none;
+  transition: max-height 360ms cubic-bezier(0.22, 0.8, 0.24, 1), opacity 220ms ease, transform 280ms ease;
+}
+
+.order-contacts.is-open {
+  max-height: 220px;
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.order-contact {
+  min-width: 0;
+  border-radius: 12px;
+  border: 1px solid rgba(198, 236, 255, 0.46);
+  background: linear-gradient(176deg, rgba(250, 254, 255, 0.3), rgba(98, 166, 218, 0.2) 58%, rgba(8, 37, 77, 0.3));
+  color: #effbff;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  box-shadow: inset 0 1px 0 rgba(251, 254, 255, 0.45);
+  opacity: 0;
+  transform: translateY(10px) scale(0.96);
+  transition:
+    transform 340ms cubic-bezier(0.2, 0.75, 0.25, 1),
+    opacity 280ms ease,
+    border-color 170ms ease,
+    box-shadow 170ms ease;
+  transition-delay: var(--contact-delay, 0ms);
+}
+
+.order-contacts.is-open .order-contact {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.order-contact:hover {
+  border-color: rgba(188, 248, 219, 0.92);
+  box-shadow: 0 12px 20px rgba(2, 24, 53, 0.22), inset 0 1px 0 rgba(252, 255, 255, 0.54);
+}
+
+.order-contact:focus-visible {
+  outline: 2px solid rgba(169, 245, 208, 0.82);
+  outline-offset: 1px;
+}
+
+.order-contact-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  border: 1px solid rgba(212, 241, 255, 0.58);
+  background:
+    radial-gradient(circle at 30% 26%, rgba(255, 255, 255, 0.95), rgba(189, 231, 255, 0.76) 58%, rgba(88, 152, 214, 0.58) 100%);
+  color: rgba(6, 53, 102, 0.92);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.order-contact-icon svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+.order-contact-copy {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.order-contact-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.order-contact-hint {
+  font-size: 0.68rem;
+  color: rgba(220, 244, 255, 0.84);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lot-window.is-sold .order-toggle {
   border-color: rgba(255, 182, 220, 0.68);
   background: linear-gradient(180deg, rgba(255, 235, 245, 0.32), rgba(178, 74, 136, 0.36));
-  color: rgba(255, 236, 248, 0.98);
+}
+
+.lot-window.is-sold .order-contact {
+  border-color: rgba(255, 185, 223, 0.5);
+  background: linear-gradient(176deg, rgba(255, 240, 248, 0.28), rgba(175, 90, 142, 0.2) 58%, rgba(29, 10, 39, 0.32));
+}
+
+.lot-window.is-sold .order-contact-icon {
+  border-color: rgba(255, 212, 236, 0.58);
+  color: rgba(109, 18, 74, 0.92);
 }
 
 .resize-handle {
@@ -1854,6 +1974,14 @@ body.has-dock .catalog {
   .lot-window-content {
     padding: 10px;
     gap: 10px;
+  }
+
+  .order-contact {
+    padding: 7px 8px;
+  }
+
+  .order-contact-hint {
+    display: none;
   }
 
   .gallery-panel {
