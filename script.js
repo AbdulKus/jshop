@@ -389,6 +389,7 @@ let lotRenderToken = 0;
 const MAX_MINIMIZED_WINDOWS = 6;
 const COMPACT_GALLERY_MAX_WIDTH = 860;
 const MAXIMIZE_ANIMATION_DURATION = 420;
+const CLOSE_ANIMATION_DURATION = 210;
 let minimizeHintTimer = null;
 let minimizeHintElement = null;
 
@@ -1090,7 +1091,7 @@ function syncWindowGalleryLayout(win) {
     return;
   }
 
-  const width = win.element.getBoundingClientRect().width;
+  const width = win.element.offsetWidth || win.element.getBoundingClientRect().width;
   win.element.classList.toggle("compact-gallery", width <= COMPACT_GALLERY_MAX_WIDTH);
 }
 
@@ -1207,13 +1208,13 @@ function animateWindowBoundsChange(win, fromRect, mode = "maximize") {
     [
       {
         transformOrigin: "top left",
-        transform: `translate(${deltaX}px, ${deltaY}px) scale(${scaleX}, ${scaleY})`,
-        filter: "saturate(0.92) brightness(0.96)"
+        transform: `translate3d(${deltaX}px, ${deltaY}px, 0) scale(${scaleX}, ${scaleY})`,
+        opacity: 0.96
       },
       {
         transformOrigin: "top left",
-        transform: "translate(0, 0) scale(1, 1)",
-        filter: "saturate(1) brightness(1)"
+        transform: "translate3d(0, 0, 0) scale(1, 1)",
+        opacity: 1
       }
     ],
     {
@@ -1233,6 +1234,68 @@ function animateWindowBoundsChange(win, fromRect, mode = "maximize") {
 
   animation.addEventListener("finish", clearAnimationState, { once: true });
   animation.addEventListener("cancel", clearAnimationState, { once: true });
+}
+
+function removeWindowWithStateSync(windowId, win) {
+  win.element.remove();
+  windowManager.windows.delete(windowId);
+  syncTray();
+  syncBackdropState();
+  focusTopWindow();
+}
+
+function animateWindowClose(win, onComplete) {
+  if (!win || !win.element) {
+    onComplete();
+    return;
+  }
+
+  if (prefersReducedMotion() || typeof win.element.animate !== "function") {
+    onComplete();
+    return;
+  }
+
+  if (win.closeAnimation) {
+    win.closeAnimation.cancel();
+    win.closeAnimation = null;
+  }
+
+  win.element.classList.add("closing-animating");
+  const animation = win.element.animate(
+    [
+      {
+        transform: "translate3d(0, 0, 0) scale(1)",
+        opacity: 1
+      },
+      {
+        transform: "translate3d(0, 12px, 0) scale(0.96)",
+        opacity: 0
+      }
+    ],
+    {
+      duration: CLOSE_ANIMATION_DURATION,
+      easing: "cubic-bezier(0.22, 0.67, 0.32, 1)"
+    }
+  );
+
+  win.closeAnimation = animation;
+  const clearCloseAnimation = () => {
+    if (win.closeAnimation !== animation) {
+      return;
+    }
+    win.closeAnimation = null;
+    win.element.classList.remove("closing-animating");
+  };
+
+  animation.addEventListener(
+    "finish",
+    () => {
+      clearCloseAnimation();
+      onComplete();
+    },
+    { once: true }
+  );
+  animation.addEventListener("cancel", clearCloseAnimation, { once: true });
 }
 
 function toggleMaximize(windowId) {
@@ -1281,27 +1344,23 @@ function closeWindow(windowId) {
     win.maximizeAnimation = null;
   }
   win.element.classList.remove("maximize-animating");
+  if (win.closeAnimation) {
+    win.closeAnimation.cancel();
+    win.closeAnimation = null;
+  }
+  win.element.classList.remove("closing-animating");
 
   if (win.isMinimized) {
-    win.element.remove();
-    windowManager.windows.delete(windowId);
-    syncTray();
-    syncBackdropState();
-    focusTopWindow();
+    removeWindowWithStateSync(windowId, win);
     return;
   }
 
-  win.element.style.transition = "transform 220ms ease, opacity 220ms ease";
-  win.element.style.transform = "translateY(14px) scale(0.94)";
-  win.element.style.opacity = "0";
-
-  setTimeout(() => {
-    win.element.remove();
-    windowManager.windows.delete(windowId);
-    syncTray();
-    syncBackdropState();
-    focusTopWindow();
-  }, 230);
+  win.element.style.transition = "";
+  win.element.style.transform = "";
+  win.element.style.opacity = "";
+  animateWindowClose(win, () => {
+    removeWindowWithStateSync(windowId, win);
+  });
 }
 
 function minimizeWindow(windowId) {
@@ -1502,7 +1561,12 @@ function removeWindowImmediate(windowId) {
     win.maximizeAnimation.cancel();
     win.maximizeAnimation = null;
   }
+  if (win.closeAnimation) {
+    win.closeAnimation.cancel();
+    win.closeAnimation = null;
+  }
   win.element.classList.remove("maximize-animating");
+  win.element.classList.remove("closing-animating");
   win.element.remove();
   windowManager.windows.delete(windowId);
 }
@@ -1582,6 +1646,7 @@ function openLotWindow(lotId) {
     isMinimizing: false,
     isMaximized: false,
     maximizeAnimation: null,
+    closeAnimation: null,
     restoreRect: null,
     element,
     refs: createWindowRefs(element)

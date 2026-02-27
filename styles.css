@@ -1035,6 +1035,8 @@ body.has-dock .catalog {
 .lot-window {
   position: fixed;
   pointer-events: auto;
+  contain: layout paint;
+  backface-visibility: hidden;
   --glitch-bg-image: none;
   background:
     linear-gradient(166deg, rgba(248, 253, 255, 0.4) 0%, rgba(188, 230, 255, 0.3) 46%, rgba(8, 34, 71, 0.5) 100%);
@@ -1100,8 +1102,16 @@ body.has-dock .catalog {
   border-radius: 12px;
 }
 
-.lot-window.maximize-animating {
-  will-change: transform, filter;
+.lot-window.maximize-animating,
+.lot-window.closing-animating {
+  will-change: transform, opacity;
+}
+
+.lot-window.maximize-animating::after,
+.lot-window.closing-animating::after,
+.lot-window.maximize-animating .main-image-wrap::before,
+.lot-window.closing-animating .main-image-wrap::before {
+  animation-play-state: paused;
 }
 
 .window-bar.draggable {
