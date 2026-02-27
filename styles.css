@@ -1100,6 +1100,10 @@ body.has-dock .catalog {
   border-radius: 12px;
 }
 
+.lot-window.maximize-animating {
+  will-change: transform, filter;
+}
+
 .window-bar.draggable {
   cursor: grab;
 }

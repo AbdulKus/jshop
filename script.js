@@ -388,6 +388,7 @@ const state = {
 let lotRenderToken = 0;
 const MAX_MINIMIZED_WINDOWS = 6;
 const COMPACT_GALLERY_MAX_WIDTH = 860;
+const MAXIMIZE_ANIMATION_DURATION = 420;
 let minimizeHintTimer = null;
 let minimizeHintElement = null;
 
@@ -467,6 +468,10 @@ function getDesktopReserveHeight() {
 
 function isMobileLayout() {
   return window.matchMedia("(max-width: 760px)").matches;
+}
+
+function prefersReducedMotion() {
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
 function makeCategoryChips() {
@@ -1161,11 +1166,81 @@ function applyMaximize(win) {
   syncWindowGalleryLayout(win);
 }
 
+function animateWindowBoundsChange(win, fromRect, mode = "maximize") {
+  if (!win || !win.element || !fromRect || isMobileLayout() || prefersReducedMotion()) {
+    return;
+  }
+  if (typeof win.element.animate !== "function") {
+    return;
+  }
+
+  const toRect = win.element.getBoundingClientRect();
+  const deltaX = fromRect.left - toRect.left;
+  const deltaY = fromRect.top - toRect.top;
+  const scaleX = fromRect.width / Math.max(1, toRect.width);
+  const scaleY = fromRect.height / Math.max(1, toRect.height);
+  const hasMeaningfulDelta =
+    Math.abs(deltaX) > 0.5 ||
+    Math.abs(deltaY) > 0.5 ||
+    Math.abs(scaleX - 1) > 0.01 ||
+    Math.abs(scaleY - 1) > 0.01;
+
+  if (!hasMeaningfulDelta) {
+    return;
+  }
+
+  if (win.maximizeAnimation) {
+    win.maximizeAnimation.cancel();
+    win.maximizeAnimation = null;
+  }
+
+  const isExpanding = mode === "maximize";
+  const easing = isExpanding
+    ? "cubic-bezier(0.16, 0.84, 0.23, 1)"
+    : "cubic-bezier(0.22, 0.78, 0.34, 1)";
+  const duration = isExpanding
+    ? MAXIMIZE_ANIMATION_DURATION
+    : Math.round(MAXIMIZE_ANIMATION_DURATION * 0.82);
+  win.element.classList.add("maximize-animating");
+
+  const animation = win.element.animate(
+    [
+      {
+        transformOrigin: "top left",
+        transform: `translate(${deltaX}px, ${deltaY}px) scale(${scaleX}, ${scaleY})`,
+        filter: "saturate(0.92) brightness(0.96)"
+      },
+      {
+        transformOrigin: "top left",
+        transform: "translate(0, 0) scale(1, 1)",
+        filter: "saturate(1) brightness(1)"
+      }
+    ],
+    {
+      duration,
+      easing
+    }
+  );
+
+  win.maximizeAnimation = animation;
+  const clearAnimationState = () => {
+    if (win.maximizeAnimation !== animation) {
+      return;
+    }
+    win.maximizeAnimation = null;
+    win.element.classList.remove("maximize-animating");
+  };
+
+  animation.addEventListener("finish", clearAnimationState, { once: true });
+  animation.addEventListener("cancel", clearAnimationState, { once: true });
+}
+
 function toggleMaximize(windowId) {
   const win = windowManager.windows.get(windowId);
   if (!win || win.isMinimized) {
     return;
   }
+  const fromRect = !isMobileLayout() ? win.element.getBoundingClientRect() : null;
 
   if (!win.isMaximized) {
     const rect = win.element.getBoundingClientRect();
@@ -1190,6 +1265,9 @@ function toggleMaximize(windowId) {
   }
 
   syncWindowGalleryLayout(win);
+  if (fromRect) {
+    animateWindowBoundsChange(win, fromRect, win.isMaximized ? "maximize" : "restore");
+  }
   focusWindow(windowId);
 }
 
@@ -1198,6 +1276,11 @@ function closeWindow(windowId) {
   if (!win) {
     return;
   }
+  if (win.maximizeAnimation) {
+    win.maximizeAnimation.cancel();
+    win.maximizeAnimation = null;
+  }
+  win.element.classList.remove("maximize-animating");
 
   if (win.isMinimized) {
     win.element.remove();
@@ -1415,6 +1498,11 @@ function removeWindowImmediate(windowId) {
   if (!win) {
     return;
   }
+  if (win.maximizeAnimation) {
+    win.maximizeAnimation.cancel();
+    win.maximizeAnimation = null;
+  }
+  win.element.classList.remove("maximize-animating");
   win.element.remove();
   windowManager.windows.delete(windowId);
 }
@@ -1493,6 +1581,7 @@ function openLotWindow(lotId) {
     isMinimized: false,
     isMinimizing: false,
     isMaximized: false,
+    maximizeAnimation: null,
     restoreRect: null,
     element,
     refs: createWindowRefs(element)
