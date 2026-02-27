@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AeroGem Atelier</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Exo+2:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="scene-lights" aria-hidden="true">
+    <span class="light l1"></span>
+    <span class="light l2"></span>
+    <span class="light l3"></span>
+    <span class="light l4"></span>
+  </div>
+
+  <header class="hero shell-window">
+    <div class="window-bar">
+      <div class="window-title">AeroGem Atelier</div>
+      <div class="window-controls">
+        <button class="window-btn ghost" type="button" aria-label="Свернуть"></button>
+        <button class="window-btn ghost" type="button" aria-label="Развернуть"></button>
+        <button class="window-btn close ghost" type="button" aria-label="Закрыть"></button>
+      </div>
+    </div>
+
+    <div class="hero-content">
+      <section class="hero-copy">
+        <p class="kicker">Новая коллекция 2026</p>
+        <h1>Ювелирная витрина с эффектом живого стекла</h1>
+        <p>
+          Воздушный Windows Aero стиль, хрустальные блики и мягкий объем.
+          Нажимайте на лоты ниже: откроется полноценная карточка с описанием,
+          листанием фото и детальными характеристиками.
+        </p>
+        <div class="hero-actions">
+          <button class="glass-btn" data-scroll-target="catalog" type="button">Смотреть лоты</button>
+          <button class="glass-btn secondary" id="openFeaturedBtn" type="button">Открыть витринный лот</button>
+        </div>
+      </section>
+
+      <aside class="hero-widgets">
+        <article class="mini-widget">
+          <p>Лотов в каталоге</p>
+          <strong id="lotsInCatalog">0</strong>
+        </article>
+        <article class="mini-widget">
+          <p>Активный стиль</p>
+          <strong>Crystal Aero</strong>
+        </article>
+        <article class="mini-widget">
+          <p>Текущее время</p>
+          <strong id="clockNow">--:--</strong>
+        </article>
+      </aside>
+    </div>
+  </header>
+
+  <section class="toolbar shell-window" aria-label="Фильтрация каталога">
+    <div class="window-bar slim">
+      <div class="window-title">Панель подбора</div>
+    </div>
+    <div class="toolbar-content">
+      <label class="field">
+        <span>Поиск по названию</span>
+        <input id="searchInput" type="search" placeholder="Например: сапфир или кольцо" autocomplete="off">
+      </label>
+
+      <label class="field">
+        <span>Сортировка</span>
+        <div class="glass-select" id="sortSelect" data-value="featured">
+          <button class="glass-select-trigger" id="sortSelectTrigger" type="button" aria-haspopup="listbox" aria-expanded="false">
+            <span class="glass-select-value" id="sortSelectValue">Сначала рекомендуемые</span>
+            <span class="glass-select-caret" aria-hidden="true"></span>
+          </button>
+          <div class="glass-select-menu" id="sortSelectMenu" role="listbox" aria-label="Сортировка лотов">
+            <button class="glass-select-option active" type="button" role="option" data-value="featured" aria-selected="true">Сначала рекомендуемые</button>
+            <button class="glass-select-option" type="button" role="option" data-value="price-asc" aria-selected="false">Цена: по возрастанию</button>
+            <button class="glass-select-option" type="button" role="option" data-value="price-desc" aria-selected="false">Цена: по убыванию</button>
+            <button class="glass-select-option" type="button" role="option" data-value="name-asc" aria-selected="false">Название: А-Я</button>
+          </div>
+        </div>
+      </label>
+
+      <div class="availability-filter">
+        <span>В наличии</span>
+        <button class="availability-toggle" id="availableToggle" type="button" role="switch" aria-checked="false" aria-label="Показывать только лоты в наличии">
+          <span class="availability-thumb"></span>
+        </button>
+      </div>
+
+      <div class="chips-wrap">
+        <span>Категории</span>
+        <div class="chips" id="categoryChips"></div>
+      </div>
+    </div>
+  </section>
+
+  <main id="catalog" class="catalog">
+    <h2>Лоты</h2>
+    <p class="catalog-note">Карточки интерактивные: нажмите на любой лот для детального просмотра.</p>
+    <div class="lot-grid" id="lotGrid"></div>
+    <p id="emptyState" class="empty-state" hidden>Ничего не найдено. Попробуйте изменить фильтр или поиск.</p>
+  </main>
+
+  <div class="desktop-layer" id="desktopLayer">
+    <div class="desktop-backdrop" id="desktopBackdrop"></div>
+    <div class="window-host" id="windowHost"></div>
+    <section class="tray-bar shell-window" id="trayBar" aria-label="Панель свернутых лотов">
+      <div class="window-bar mini">
+        <div class="window-title">Трей лотов</div>
+      </div>
+      <div class="tray-content">
+        <div class="tray-items-wrap">
+          <div class="tray-items" id="trayItems">
+            <p class="tray-empty" id="trayEmpty">Свернутые окна появятся здесь.</p>
+          </div>
+        </div>
+        <nav class="pagination-panel" id="paginationPanel" aria-label="Пагинация каталога" hidden>
+          <div class="pagination-content">
+            <button class="page-nav" id="pagePrevBtn" type="button" aria-label="Предыдущая страница">Назад</button>
+            <div class="page-list" id="pageList"></div>
+            <button class="page-nav" id="pageNextBtn" type="button" aria-label="Следующая страница">Вперед</button>
+          </div>
+        </nav>
+      </div>
+    </section>
+  </div>
+
+  <template id="lotWindowTemplate">
+    <article class="lot-window shell-window" role="dialog" aria-modal="false">
+      <div class="window-bar draggable js-drag-handle">
+        <div class="window-title js-window-title">Карточка лота</div>
+        <div class="window-controls">
+          <button class="window-btn mobile-only js-head-prev-image" type="button" aria-label="Предыдущее фото">&#x2039;</button>
+          <button class="window-btn mobile-only js-head-next-image" type="button" aria-label="Следующее фото">&#x203A;</button>
+          <button class="window-btn desktop-only js-minimize" type="button" aria-label="Свернуть окно">&#x2013;</button>
+          <button class="window-btn desktop-only js-maximize" type="button" aria-label="Развернуть окно">&#x2610;</button>
+          <button class="window-btn close js-close" type="button" aria-label="Закрыть окно">&#x2715;</button>
+        </div>
+      </div>
+
+      <div class="lot-window-content">
+        <section class="gallery-panel">
+          <button class="nav-arrow js-prev-image" type="button" aria-label="Предыдущее фото">&#x2039;</button>
+          <figure class="main-image-wrap">
+            <img class="window-image current" alt="">
+            <img class="window-image incoming" alt="">
+            <figcaption class="image-counter js-image-counter">1 / 1</figcaption>
+          </figure>
+          <button class="nav-arrow js-next-image" type="button" aria-label="Следующее фото">&#x203A;</button>
+          <div class="thumb-strip js-thumb-strip"></div>
+        </section>
+
+        <section class="details-panel">
+          <p class="modal-category js-category"></p>
+          <h3 class="js-title"></h3>
+          <p class="modal-price js-price"></p>
+          <p class="modal-stock js-stock"></p>
+          <div class="details-scroll">
+            <p class="modal-description js-description"></p>
+            <ul class="modal-specs js-specs"></ul>
+          </div>
+          <button class="glass-btn buy-btn" type="button">Добавить в заказ</button>
+        </section>
+      </div>
+
+      <button class="resize-handle js-resize" type="button" aria-label="Изменить размер окна"></button>
+    </article>
+  </template>
+
+  <template id="trayItemTemplate">
+    <button class="tray-item" type="button">
+      <img class="tray-thumb" alt="" loading="lazy">
+      <span class="tray-label"></span>
+    </button>
+  </template>
+
+  <template id="lotCardTemplate">
+    <article class="lot-card shell-window">
+      <div class="window-bar mini">
+        <div class="window-title lot-window-title"></div>
+        <div class="window-controls">
+          <span class="window-dot"></span>
+          <span class="window-dot"></span>
+          <span class="window-dot"></span>
+        </div>
+      </div>
+      <button class="lot-click-zone" type="button">
+        <div class="lot-image-wrap">
+          <img class="lot-image" alt="" loading="lazy">
+          <span class="lot-stock" hidden></span>
+        </div>
+        <div class="lot-info">
+          <p class="lot-category"></p>
+          <h3 class="lot-name"></h3>
+          <div class="lot-footer">
+            <p class="lot-price"></p>
+            <span class="lot-open">Открыть</span>
+          </div>
+        </div>
+      </button>
+    </article>
+  </template>
+
+  <script src="script.js"></script>
+</body>
+</html>
