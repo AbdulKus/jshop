@@ -1405,6 +1405,20 @@ body.has-dock .catalog {
   transform: translateY(-36%) rotate(-135deg);
 }
 
+.order-toggle:disabled {
+  cursor: not-allowed;
+  opacity: 0.9;
+}
+
+.order-toggle:disabled::after {
+  opacity: 0;
+}
+
+.order-toggle:disabled:hover {
+  transform: none;
+  box-shadow: none;
+}
+
 .details-panel.order-open .order-toggle {
   box-shadow: 0 0 0 1px rgba(200, 249, 223, 0.46), 0 10px 24px rgba(24, 86, 56, 0.24);
 }
@@ -1509,6 +1523,7 @@ body.has-dock .catalog {
 .lot-window.is-sold .order-toggle {
   border-color: rgba(255, 182, 220, 0.68);
   background: linear-gradient(180deg, rgba(255, 235, 245, 0.32), rgba(178, 74, 136, 0.36));
+  color: rgba(255, 236, 248, 0.98);
 }
 
 .lot-window.is-sold .order-contact {

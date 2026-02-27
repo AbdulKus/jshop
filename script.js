@@ -926,6 +926,10 @@ function setOrderContactsExpanded(win, expanded) {
     return;
   }
 
+  if (expanded && (win.refs.orderContacts.hidden || win.refs.orderToggleBtn.disabled)) {
+    expanded = false;
+  }
+
   win.isOrderContactsOpen = expanded;
   win.refs.orderToggleBtn.setAttribute("aria-expanded", expanded ? "true" : "false");
   win.refs.orderToggleBtn.classList.toggle("is-open", expanded);
@@ -1155,8 +1159,20 @@ function setWindowLot(win, lotId, resetImage = true) {
   win.refs.specs.innerHTML = lot.specs.map((spec) => `<li>${spec}</li>`).join("");
   win.element.classList.toggle("is-sold", lot.sold);
   applyLotGlitchBackground(win.element, lot);
-  renderOrderContacts(win, lot);
   setOrderContactsExpanded(win, false);
+  if (win.refs.orderToggleBtn) {
+    win.refs.orderToggleBtn.textContent = lot.sold ? "Лот продан" : "Контакты для заказа";
+    win.refs.orderToggleBtn.disabled = lot.sold;
+  }
+  if (win.refs.orderContacts) {
+    if (lot.sold) {
+      win.refs.orderContacts.hidden = true;
+      win.refs.orderContacts.innerHTML = "";
+    } else {
+      win.refs.orderContacts.hidden = false;
+      renderOrderContacts(win, lot);
+    }
+  }
 
   renderWindowThumbnails(win, lot);
   setWindowImage(win, win.imageIndex, 1, false);
